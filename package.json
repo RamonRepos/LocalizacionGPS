@@ -1,0 +1,21 @@
+{
+  "name": "localizaciongps",
+  "version": "0.1.0",
+  "description": "Etiquetas QR imprimibles para compartir la ubicación de mascotas y objetos perdidos",
+  "main": "servidor.js",
+  "private": true,
+  "scripts": {
+    "inicio": "node servidor.js",
+    "dev": "node --watch servidor.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "pdfkit": "^0.19.1",
+    "qrcode": "^1.5.4"
+  }
+}

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LocalizaciónGPS</title>
+  <link rel="stylesheet" href="/css/estilos.css">
+</head>
+<body>
+  <header class="cabecera">
+    <h1>LocalizaciónGPS</h1>
+    <div id="zona-sesion" class="zona-sesion"></div>
+  </header>
+
+  <main class="contenedor">
+
+    <section id="vista-autenticacion" class="tarjeta tarjeta-centrada" hidden>
+      <nav class="pestanas">
+        <button type="button" id="pestana-login" class="pestaña activa">Iniciar sesión</button>
+        <button type="button" id="pestana-registro" class="pestaña">Crear cuenta</button>
+      </nav>
+
+      <form id="formulario-login" class="formulario">
+        <label for="login-email">Email</label>
+        <input type="email" id="login-email" autocomplete="email" required>
+        <label for="login-contrasena">Contraseña</label>
+        <input type="password" id="login-contrasena" autocomplete="current-password" required minlength="8">
+        <button type="submit" class="boton boton-principal">Iniciar sesión</button>
+        <p id="error-autenticacion" class="error"></p>
+      </form>
+
+      <form id="formulario-registro" class="formulario" hidden>
+        <label for="registro-email">Email</label>
+        <input type="email" id="registro-email" autocomplete="email" required>
+        <label for="registro-contrasena">Contraseña (mínimo 8 caracteres)</label>
+        <input type="password" id="registro-contrasena" autocomplete="new-password" required minlength="8">
+        <button type="submit" class="boton boton-principal">Crear cuenta</button>
+      </form>
+    </section>
+
+    <section id="vista-aplicacion" hidden>
+
+      <section class="tarjeta">
+        <h2>Generar una etiqueta QR</h2>
+        <p class="texto-ayuda">
+          Crea un código QR, descárgalo como imagen o PDF, imprímelo y colócalo en el collar
+          de tu perro o en un objeto. Quien lo encuentre podrá compartir su ubicación escaneándolo.
+        </p>
+        <form id="formulario-codigo" class="formulario formulario-linea">
+          <input
+            type="text"
+            id="nombre-etiqueta"
+            maxlength="100"
+            placeholder="Nombre de la etiqueta (opcional), p. ej. Collar de Rocky"
+          >
+          <button type="submit" class="boton boton-principal">Generar QR</button>
+        </form>
+
+        <div id="resultado-codigo" class="resultado-codigo" hidden>
+          <img id="imagen-qr" class="imagen-qr" alt="Código QR generado">
+          <div class="acciones-qr">
+            <p>Enlace del QR:</p>
+            <code id="url-compartir" class="url-compartir"></code>
+            <div class="botones-descarga">
+              <a id="enlace-png" class="boton" download>Descargar PNG</a>
+              <a id="enlace-pdf" class="boton" download>Descargar PDF</a>
+              <button type="button" id="boton-copiar-url" class="boton">Copiar enlace</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="tarjeta">
+        <h2>Mis etiquetas</h2>
+        <ul id="lista-codigos" class="lista-codigos"></ul>
+        <p id="sin-codigos" class="texto-ayuda">Todavía no has creado ninguna etiqueta.</p>
+      </section>
+
+      <section class="tarjeta">
+        <div class="cabecera-seccion">
+          <h2>Ubicaciones compartidas conmigo</h2>
+          <button type="button" id="boton-refrescar" class="boton">Actualizar</button>
+        </div>
+        <p class="texto-ayuda">Se actualizan automáticamente cada 30 segundos.</p>
+        <div class="contenedor-tabla">
+          <table id="tabla-ubicaciones">
+            <thead>
+              <tr>
+                <th>Cuándo</th>
+                <th>Etiqueta</th>
+                <th>Coordenadas</th>
+                <th>Precisión</th>
+                <th>Mensaje</th>
+                <th>Mapa</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p id="sin-ubicaciones" class="texto-ayuda">Todavía nadie ha compartido una ubicación contigo.</p>
+      </section>
+
+    </section>
+
+  </main>
+  <script src="/js/principal.js"></script>
+</body>
+</html>

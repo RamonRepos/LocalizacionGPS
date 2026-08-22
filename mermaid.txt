@@ -1,0 +1,120 @@
+classDiagram
+    direction LR
+
+    class Usuario {
+        +INTEGER id
+        +TEXT email
+        +TEXT hash_contrasena
+        +TEXT fecha_creacion
+    }
+
+    class Codigo {
+        +TEXT id
+        +INTEGER usuario_id
+        +TEXT nombre_etiqueta
+        +TEXT fecha_creacion
+    }
+
+    class Ubicacion {
+        +INTEGER id
+        +TEXT codigo_id
+        +REAL latitud
+        +REAL longitud
+        +REAL precision_metros
+        +TEXT mensaje
+        +TEXT fecha_compartida
+    }
+
+    class BaseDatos {
+        -DatabaseSync db
+        +exec(script)
+        +prepare(consulta) SentenciaPreparada
+    }
+
+    class ServicioUsuarios {
+        +normalizarEmail(email) string
+        +esEmailValido(email) boolean
+        +hashContrasena(contrasena) string
+        +verificarContrasena(contrasena, hashAlmacenado) boolean
+    }
+
+    class ServicioQr {
+        +generarQrPng(contenido) Promise~Buffer~
+        +generarQrPdf(contenido, titulo) Promise~Buffer~
+    }
+
+    class EnrutadorAutenticacion {
+        +postRegistro()
+        +postLogin()
+        +postLogout()
+        +getSesion()
+        -requerirSesion(peticion, respuesta, siguiente)
+    }
+
+    class EnrutadorCodigos {
+        +postCodigos()
+        +getCodigos()
+        +getUbicacionesDeCodigo()
+        +getQrPng()
+        +getQrPdf()
+        -construirUrlPublica(peticion, codigo) string
+        -nuevoIdentificador() string
+    }
+
+    class EnrutadorUbicaciones {
+        +postCompartir()
+        +getUbicacionesPropias()
+        -superaLimite(clave, ahora) boolean
+        -podarRegistrosAntiguos(ahora)
+        -coordenadaValida(valor, minimo, maximo) boolean
+    }
+
+    class EnrutadorPaginas {
+        +getPaginaInicio()
+        +getPaginaCompartir(codigo)
+    }
+
+    class Servidor {
+        -puerto
+        -secretoSesion
+        +listen()
+    }
+
+    class InterfazPrincipal {
+        -iniciar()
+        -mostrarAutenticacion()
+        -mostrarAplicacion(sesion)
+        -alternarPestanas(mostrarLogin)
+        -enviarFormularioAutenticacion(url, cuerpo)
+        -crearCodigo()
+        -cargarCodigos()
+        -cargarUbicaciones()
+        -cerrarSesion()
+        -formatearFecha(fechaIso) string
+        -crearElemento(etiqueta, texto) Elemento
+    }
+
+    class InterfazCompartir {
+        -enviarUbicacion(posicion)
+        -falloGps(error)
+        -informar(texto)
+    }
+
+    Usuario "1" --> "*" Codigo : crea
+    Codigo "1" --> "*" Ubicacion : recibe
+
+    Servidor --> EnrutadorAutenticacion : monta en /api
+    Servidor --> EnrutadorCodigos : monta en /api y /qr
+    Servidor --> EnrutadorUbicaciones : monta en /api
+    Servidor --> EnrutadorPaginas : monta en /
+
+    EnrutadorAutenticacion ..> ServicioUsuarios : usa
+    EnrutadorAutenticacion ..> BaseDatos : consulta
+    EnrutadorCodigos ..> ServicioQr : usa
+    EnrutadorCodigos ..> BaseDatos : consulta
+    EnrutadorUbicaciones ..> BaseDatos : consulta
+
+    InterfazPrincipal ..> EnrutadorAutenticacion : consume API
+    InterfazPrincipal ..> EnrutadorCodigos : consume API y QR
+    InterfazPrincipal ..> EnrutadorUbicaciones : consume API
+    InterfazCompartir ..> EnrutadorUbicaciones : consume API

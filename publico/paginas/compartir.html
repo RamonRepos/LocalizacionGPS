@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Compartir ubicación · LocalizaciónGPS</title>
+  <link rel="stylesheet" href="/css/estilos.css">
+</head>
+<body class="pagina-compartir">
+  <main class="contenedor contenedor-estrecho">
+
+    <section id="panel-compartir" class="tarjeta tarjeta-centrada">
+      <h1>¿Quieres compartir tu ubicación?</h1>
+      <p class="texto-ayuda">
+        Has escaneado la etiqueta de una mascota u objeto perdido.
+        Al compartir tu ubicación, su dueño sabrá dónde lo has encontrado.
+      </p>
+      <textarea
+        id="mensaje"
+        maxlength="500"
+        rows="3"
+        placeholder="Mensaje opcional para el dueño (máximo 500 caracteres)"
+      ></textarea>
+      <button type="button" id="boton-compartir" class="boton boton-principal boton-grande">
+        Compartir mi ubicación
+      </button>
+      <p id="estado" class="estado" role="status"></p>
+    </section>
+
+    <section id="panel-error-codigo" class="tarjeta tarjeta-centrada" hidden>
+      <h1>Etiqueta no reconocida</h1>
+      <p class="texto-ayuda">El código escaneado no corresponde a ninguna etiqueta registrada. Revisa que el enlace sea correcto.</p>
+    </section>
+
+    <section id="panel-gracias" class="tarjeta tarjeta-centrada" hidden>
+      <h1>¡Gracias!</h1>
+      <p class="texto-ayuda">
+        Tu ubicación se ha enviado correctamente. El dueño ya puede verla.
+        Puedes cerrar esta página.
+      </p>
+    </section>
+
+  </main>
+  <script src="/js/compartir.js"></script>
+</body>
+</html>
