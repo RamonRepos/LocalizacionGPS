@@ -1,81 +1,83 @@
 const express = require('express');
 
-const { db } = require('../db');
 const { normalizarEmail, esEmailValido, hashContrasena, verificarContrasena } = require('../servicios/usuarios');
 
-const enrutadorAutenticacion = express.Router();
-
 function requerirSesion(peticion, respuesta, siguiente) {
-  if (!peticion.session.usuarioId) {
+  if (!peticion.usuarioSesion) {
     respuesta.status(401).json({ error: 'Debes iniciar sesión' });
     return;
   }
   siguiente();
 }
 
-enrutadorAutenticacion.post('/registro', (peticion, respuesta) => {
-  const email = normalizarEmail(peticion.body?.email);
-  const contrasena = peticion.body?.contrasena;
+function crearEnrutadorAutenticacion(db) {
+  const enrutadorAutenticacion = express.Router();
 
-  if (!esEmailValido(email)) {
-    respuesta.status(400).json({ error: 'El email no tiene un formato válido' });
-    return;
-  }
-  if (typeof contrasena !== 'string' || contrasena.length < 8) {
-    respuesta.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
-    return;
-  }
+  enrutadorAutenticacion.post('/registro', async (peticion, respuesta) => {
+    const email = normalizarEmail(peticion.body?.email);
+    const contrasena = peticion.body?.contrasena;
 
-  const existente = db.prepare('SELECT id FROM usuarios WHERE email = ?').get(email);
-  if (existente) {
-    respuesta.status(409).json({ error: 'Ya existe una cuenta con este email' });
-    return;
-  }
+    if (!esEmailValido(email)) {
+      respuesta.status(400).json({ error: 'El email no tiene un formato válido' });
+      return;
+    }
+    if (typeof contrasena !== 'string' || contrasena.length < 8) {
+      respuesta.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
+      return;
+    }
 
-  const resultado = db
-    .prepare('INSERT INTO usuarios (email, hash_contrasena, fecha_creacion) VALUES (?, ?, ?)')
-    .run(email, hashContrasena(contrasena), new Date().toISOString());
+    const existente = await db.get('SELECT id FROM usuarios WHERE email = ?', email);
+    if (existente) {
+      respuesta.status(409).json({ error: 'Ya existe una cuenta con este email' });
+      return;
+    }
 
-  peticion.session.usuarioId = Number(resultado.lastInsertRowid);
-  respuesta.status(201).json({ email });
-});
+    const resultado = await db.run(
+      'INSERT INTO usuarios (email, hash_contrasena, fecha_creacion) VALUES (?, ?, ?)',
+      email,
+      hashContrasena(contrasena),
+      new Date().toISOString()
+    );
 
-enrutadorAutenticacion.post('/login', (peticion, respuesta) => {
-  const email = normalizarEmail(peticion.body?.email);
-  const contrasena = peticion.body?.contrasena;
+    respuesta.fijarSesion(Number(resultado.lastInsertRowid));
+    respuesta.status(201).json({ email });
+  });
 
-  const usuario = db.prepare('SELECT * FROM usuarios WHERE email = ?').get(email);
-  if (!usuario || typeof contrasena !== 'string' || !verificarContrasena(contrasena, usuario.hash_contrasena)) {
-    respuesta.status(401).json({ error: 'Email o contraseña incorrectos' });
-    return;
-  }
+  enrutadorAutenticacion.post('/login', async (peticion, respuesta) => {
+    const email = normalizarEmail(peticion.body?.email);
+    const contrasena = peticion.body?.contrasena;
 
-  peticion.session.usuarioId = usuario.id;
-  respuesta.json({ email: usuario.email });
-});
+    const usuario = await db.get('SELECT * FROM usuarios WHERE email = ?', email);
+    if (!usuario || typeof contrasena !== 'string' || !verificarContrasena(contrasena, usuario.hash_contrasena)) {
+      respuesta.status(401).json({ error: 'Email o contraseña incorrectos' });
+      return;
+    }
 
-enrutadorAutenticacion.post('/logout', (peticion, respuesta) => {
-  peticion.session.destroy(() => {
-    respuesta.clearCookie('connect.sid');
+    respuesta.fijarSesion(usuario.id);
+    respuesta.json({ email: usuario.email });
+  });
+
+  enrutadorAutenticacion.post('/logout', (peticion, respuesta) => {
+    respuesta.borrarSesion();
     respuesta.json({ ok: true });
   });
-});
 
-enrutadorAutenticacion.get('/sesion', (peticion, respuesta) => {
-  if (!peticion.session.usuarioId) {
-    respuesta.status(401).json({ error: 'No hay sesión iniciada' });
-    return;
-  }
-  const usuario = db
-    .prepare('SELECT email FROM usuarios WHERE id = ?')
-    .get(peticion.session.usuarioId);
+  enrutadorAutenticacion.get('/sesion', async (peticion, respuesta) => {
+    if (!peticion.usuarioSesion) {
+      respuesta.status(401).json({ error: 'No hay sesión iniciada' });
+      return;
+    }
+    const usuario = await db.get('SELECT email FROM usuarios WHERE id = ?', peticion.usuarioSesion);
 
-  if (!usuario) {
-    peticion.session.destroy(() => {});
-    respuesta.status(401).json({ error: 'No hay sesión iniciada' });
-    return;
-  }
-  respuesta.json({ email: usuario.email });
-});
+    if (!usuario) {
+      respuesta.borrarSesion();
+      respuesta.status(401).json({ error: 'No hay sesión iniciada' });
+      return;
+    }
+    respuesta.json({ email: usuario.email });
+  });
 
-module.exports = { enrutadorAutenticacion, requerirSesion };
+  return enrutadorAutenticacion;
+}
+
+module.exports = { crearEnrutadorAutenticacion, requerirSesion };

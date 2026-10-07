@@ -1,9 +1,6 @@
-# Copia este fichero como .env y rellena los valores.
+# Copia este fichero como .dev.vars (desarrollo local con `npm run dev`).
 
 # Secreto para firmar las cookies de sesión.
 # Genera uno aleatorio con:
 #   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 SESSION_SECRET=
-
-# Puerto de escucha del servidor (3000 por defecto).
-PUERTO=3000

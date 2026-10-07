@@ -1,7 +1,22 @@
 {
+  "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "localizaciongps",
+  "main": "src/worker.js",
   "compatibility_date": "2026-10-06",
+  "compatibility_flags": ["nodejs_compat"],
+  "alias": {
+    "qrcode": "./node_modules/qrcode/lib/server.js"
+  },
   "assets": {
-    "directory": "./publico/paginas"
-  }
+    "directory": "./publico",
+    "binding": "ASSETS"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "localizacion-db",
+      // Sustituye este valor por el que devuelve `npx wrangler d1 create localizacion-db`
+      "database_id": "PENDIENTE-DE-CREAR-CON-WRANGLER-D1-CREATE"
+    }
+  ]
 }

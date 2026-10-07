@@ -1,16 +1,25 @@
-const path = require('node:path');
 const express = require('express');
 
-const raizPublico = path.join(__dirname, '..', '..', 'publico');
+function crearEnrutadorPaginas(assets) {
+  const enrutadorPaginas = express.Router();
 
-const enrutadorPaginas = express.Router();
+  async function servirAsset(rutaAsset, respuesta) {
+    const recurso = await assets.fetch(new Request(`https://assets${rutaAsset}`));
+    respuesta.status(recurso.status);
+    const tipoContenido = recurso.headers.get('content-type');
+    if (tipoContenido) {
+      respuesta.type(tipoContenido);
+    }
+    respuesta.send(Buffer.from(await recurso.arrayBuffer()));
+  }
 
-enrutadorPaginas.get('/', (peticion, respuesta) => {
-  respuesta.sendFile(path.join(raizPublico, 'paginas', 'index.html'));
-});
+  enrutadorPaginas.get('/', (peticion, respuesta) => servirAsset('/paginas/index.html', respuesta));
 
-enrutadorPaginas.get('/compartir/:codigo', (peticion, respuesta) => {
-  respuesta.sendFile(path.join(raizPublico, 'paginas', 'compartir.html'));
-});
+  enrutadorPaginas.get('/compartir/:codigo', (peticion, respuesta) =>
+    servirAsset('/paginas/compartir.html', respuesta)
+  );
 
-module.exports = { enrutadorPaginas };
+  return enrutadorPaginas;
+}
+
+module.exports = { crearEnrutadorPaginas };

@@ -1,38 +1,25 @@
-const fs = require('node:fs');
-const path = require('node:path');
-const { DatabaseSync } = require('node:sqlite');
+function crearBaseDatos(d1) {
+  return {
+    get(consulta, ...parametros) {
+      const sentencia = parametros.length > 0 ? d1.prepare(consulta).bind(...parametros) : d1.prepare(consulta);
+      return sentencia.first();
+    },
 
-const carpetaDatos = path.join(__dirname, '..', 'datos');
-fs.mkdirSync(carpetaDatos, { recursive: true });
+    async all(consulta, ...parametros) {
+      const sentencia = parametros.length > 0 ? d1.prepare(consulta).bind(...parametros) : d1.prepare(consulta);
+      const { results } = await sentencia.all();
+      return results;
+    },
 
-const db = new DatabaseSync(path.join(carpetaDatos, 'localizacion.db'));
+    async run(consulta, ...parametros) {
+      const sentencia = parametros.length > 0 ? d1.prepare(consulta).bind(...parametros) : d1.prepare(consulta);
+      const resultado = await sentencia.run();
+      return {
+        lastInsertRowid: resultado.meta.last_row_id,
+        changes: resultado.meta.changes
+      };
+    }
+  };
+}
 
-db.exec(`
-  PRAGMA foreign_keys = ON;
-
-  CREATE TABLE IF NOT EXISTS usuarios (
-    id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    email           TEXT    NOT NULL UNIQUE,
-    hash_contrasena TEXT    NOT NULL,
-    fecha_creacion  TEXT    NOT NULL
-  );
-
-  CREATE TABLE IF NOT EXISTS codigos (
-    id              TEXT    PRIMARY KEY,
-    usuario_id      INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
-    nombre_etiqueta TEXT,
-    fecha_creacion  TEXT    NOT NULL
-  );
-
-  CREATE TABLE IF NOT EXISTS ubicaciones (
-    id               INTEGER PRIMARY KEY AUTOINCREMENT,
-    codigo_id        TEXT    NOT NULL REFERENCES codigos(id) ON DELETE CASCADE,
-    latitud          REAL    NOT NULL,
-    longitud         REAL    NOT NULL,
-    precision_metros REAL,
-    mensaje          TEXT,
-    fecha_compartida TEXT    NOT NULL
-  );
-`);
-
-module.exports = { db };
+module.exports = { crearBaseDatos };

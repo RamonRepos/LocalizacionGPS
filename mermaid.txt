@@ -25,10 +25,40 @@ classDiagram
         +TEXT fecha_compartida
     }
 
+    class Worker {
+        +env DB
+        +env ASSETS
+        +env SESSION_SECRET
+        +main()
+        +listen()
+    }
+
+    class Aplicacion {
+        +crearAplicacion(opciones) Express
+        -montarMiddlewareSesion()
+        -montarEnrutadores()
+        -manejarError(error, peticion, respuesta)
+    }
+
     class BaseDatos {
-        -DatabaseSync db
-        +exec(script)
-        +prepare(consulta) SentenciaPreparada
+        -d1 D1Database
+        +get(consulta, ...parametros) Promise~Object~
+        +all(consulta, ...parametros) Promise~Array~
+        +run(consulta, ...parametros) Promise~Resultado~
+    }
+
+    class AlmacenAssets {
+        +fetch(recurso) Response
+        +servirPaginasEstaticas()
+    }
+
+    class ServicioSesion {
+        -NOMBRE_COOKIE string
+        -DURACION_MS number
+        +middlewareSesion(secreto) Middleware
+        -calcularFirma(valor, secreto) string
+        -interpretarValorCookie(valor, secreto) number|null
+        -analizarCookies(cabecera) Object
     }
 
     class ServicioUsuarios {
@@ -41,27 +71,33 @@ classDiagram
     class ServicioQr {
         +generarQrPng(contenido) Promise~Buffer~
         +generarQrPdf(contenido, titulo) Promise~Buffer~
+        -agregarEnlace(pagina, documento, url, rectangulo)
+        -centrar(texto, fuente, tamano) number
     }
 
     class EnrutadorAutenticacion {
-        +postRegistro()
-        +postLogin()
-        +postLogout()
-        +getSesion()
-        -requerirSesion(peticion, respuesta, siguiente)
+        +crearEnrutadorAutenticacion(db) Router
+        +requerirSesion(peticion, respuesta, siguiente)
     }
 
     class EnrutadorCodigos {
+        +crearEnrutadorCodigos(db) Router
         +postCodigos()
         +getCodigos()
         +getUbicacionesDeCodigo()
-        +getQrPng()
-        +getQrPdf()
         -construirUrlPublica(peticion, codigo) string
         -nuevoIdentificador() string
     }
 
+    class EnrutadorQr {
+        +crearEnrutadorQr(db) Router
+        +getQrPng()
+        +getQrPdf()
+        -servirArchivoQr(peticion, respuesta, formato)
+    }
+
     class EnrutadorUbicaciones {
+        +crearEnrutadorUbicaciones(db) Router
         +postCompartir()
         +getUbicacionesPropias()
         -superaLimite(clave, ahora) boolean
@@ -70,14 +106,10 @@ classDiagram
     }
 
     class EnrutadorPaginas {
+        +crearEnrutadorPaginas(assets) Router
         +getPaginaInicio()
         +getPaginaCompartir(codigo)
-    }
-
-    class Servidor {
-        -puerto
-        -secretoSesion
-        +listen()
+        -servirAsset(rutaAsset, respuesta)
     }
 
     class InterfazPrincipal {
@@ -103,16 +135,24 @@ classDiagram
     Usuario "1" --> "*" Codigo : crea
     Codigo "1" --> "*" Ubicacion : recibe
 
-    Servidor --> EnrutadorAutenticacion : monta en /api
-    Servidor --> EnrutadorCodigos : monta en /api y /qr
-    Servidor --> EnrutadorUbicaciones : monta en /api
-    Servidor --> EnrutadorPaginas : monta en /
+    Worker --> Aplicacion : crea con db, secreto y assets
+    Worker --> BaseDatos : envuelve D1 (binding DB)
+    Worker --> AlmacenAssets : binding ASSETS
+
+    Aplicacion --> ServicioSesion : monta middleware
+    Aplicacion --> EnrutadorAutenticacion : monta en /api
+    Aplicacion --> EnrutadorCodigos : monta en /api
+    Aplicacion --> EnrutadorUbicaciones : monta en /api
+    Aplicacion --> EnrutadorQr : monta en /qr
+    Aplicacion --> EnrutadorPaginas : monta en /
 
     EnrutadorAutenticacion ..> ServicioUsuarios : usa
     EnrutadorAutenticacion ..> BaseDatos : consulta
-    EnrutadorCodigos ..> ServicioQr : usa
     EnrutadorCodigos ..> BaseDatos : consulta
+    EnrutadorQr ..> ServicioQr : usa
+    EnrutadorQr ..> BaseDatos : consulta
     EnrutadorUbicaciones ..> BaseDatos : consulta
+    EnrutadorPaginas ..> AlmacenAssets : sirve HTML
 
     InterfazPrincipal ..> EnrutadorAutenticacion : consume API
     InterfazPrincipal ..> EnrutadorCodigos : consume API y QR
